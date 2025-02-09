@@ -44,3 +44,10 @@ This project requires the following:
    Once the script completes, the simulation results will be saved as `simulation_results.csv` in the `src/` directory.
 
 ---
+
+## Sample Output
+
+1. Terminal Output: When simulation is executed for 10 iterations
+![terminal output](https://github.com/Aditya-Dawadikar/DAA_HW_01/blob/master/src/views/terminal_output.png)
+3. Matplotlib Visualization Output for 3 different suitability functions
+![visualization](https://github.com/Aditya-Dawadikar/DAA_HW_01/blob/master/src/views/visualization.png)

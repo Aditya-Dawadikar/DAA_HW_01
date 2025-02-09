@@ -1,102 +1,120 @@
 import math
 import random
 import pandas as pd
-import statistics as st
+import matplotlib.pyplot as plt
 
-simulation_count = 10
-max_n = 1000
+# Constants
+simulation_count = 10  # Number of simulations
+max_n = 1000  # Max value of n
 
-suitability_functions = ["LOG2N","N","NPOW3"]
+# Suitability functions
+suitability_functions = ["LOG2N", "N", "NPOW3"]
 
+# Suitability function implementations
 def generate_suitability_1(n):
-    return math.ceil(math.log2(n))
+    return math.ceil(math.log2(n)) if n > 1 else 1
 
 def generate_suitability_2(n):
     return n
 
 def generate_suitability_3(n):
-    return pow(n,3)
+    return pow(n, 3)
 
+# Hiring simulation
 def coupon_collector(function_name, max_n):
+    """Simulates the hiring process based on the suitability function."""
     max_x = 0
     if function_name == suitability_functions[0]:
-        # generate_suitability_1
         max_x = generate_suitability_1(max_n)
     elif function_name == suitability_functions[1]:
-        # generate_suitability_2
         max_x = generate_suitability_2(max_n)
     else:
-        #generate_suitability_3
         max_x = generate_suitability_3(max_n)
-    
 
     max_rating = float("-inf")
     hiring_count = 0
-    generated_suitabilities = []
-    compounding_mean = []
-    compounding_std = []
-    for i in range(0,max_n):
-        random_suitability = random.randrange(0,max_x)
-        generated_suitabilities.append(random_suitability)
-        if i<=2:
-            compounding_mean.append(0)
-            compounding_std.append(0)
-        else:
-            compounding_mean.append(st.mean(generated_suitabilities[:i]))
-            compounding_std.append(st.stdev(generated_suitabilities[:i]))
 
+    for _ in range(max_n):
+        random_suitability = random.randrange(0, max_x)
         if random_suitability > max_rating:
-            hiring_count += 1
             max_rating = random_suitability
+            hiring_count += 1
 
+    return hiring_count
 
-    aggregates = {
-        "random_sequence": generated_suitabilities,
-        "compounded_mean": compounding_mean,
-        "compounded_std": compounding_std
-    }
-
-    return hiring_count, aggregates
-
-
+# Simulation function
 def simulate():
-    suitability_1,suitability_2,suitability_3 = [],[],[]
-    aggregate_1,aggregate_2,aggregate_3 = [],[],[]
-    for i in range(simulation_count):
-        hiring_count_1, agg_1 = coupon_collector(suitability_functions[0],max_n)
-        hiring_count_2, agg_2 = coupon_collector(suitability_functions[1],max_n)
-        hiring_count_3, agg_3 = coupon_collector(suitability_functions[2],max_n)
-    
-        suitability_1.append(hiring_count_1)
-        suitability_2.append(hiring_count_2)
-        suitability_3.append(hiring_count_3)
+    """Runs the simulation for all three functions and computes the average hiring count."""
+    data_1 = [[] for _ in range(simulation_count)]
+    data_2 = [[] for _ in range(simulation_count)]
+    data_3 = [[] for _ in range(simulation_count)]
 
-        aggregate_1.append(agg_1)
-        aggregate_2.append(agg_2)
-        aggregate_3.append(agg_3)
+    # Run simulations
+    for j in range(simulation_count):
+        print("Simulation Iteration: ", j)
+        for n in range(1, max_n + 1):  # Ensure n goes from 1 to 1000
+            data_1[j].append(coupon_collector(suitability_functions[0], n))
+            data_2[j].append(coupon_collector(suitability_functions[1], n))
+            data_3[j].append(coupon_collector(suitability_functions[2], n))
 
-    data_1 = {
-        "Function 1": suitability_1,
-        "Function 2": suitability_2,
-        "Function 3": suitability_3
-    }
+    # Compute average hiring count for each n
+    avg_hiring_count_1 = [sum(data_1[j][i] for j in range(simulation_count)) / simulation_count for i in range(max_n)]
+    avg_hiring_count_2 = [sum(data_2[j][i] for j in range(simulation_count)) / simulation_count for i in range(max_n)]
+    avg_hiring_count_3 = [sum(data_3[j][i] for j in range(simulation_count)) / simulation_count for i in range(max_n)]
 
-    for i in range(simulation_count):
-        sim_results_func_1,sim_results_func_2,sim_results_func_3 = aggregate_1[i],aggregate_2[i],aggregate_3[i]
+    # Create a DataFrame to store results
+    df_results = pd.DataFrame({
+        "n": list(range(1, max_n + 1)),
+        "LOG2N": avg_hiring_count_1,
+        "N": avg_hiring_count_2,
+        "NPOW3": avg_hiring_count_3
+    })
 
-        df_sim1 = pd.DataFrame.from_dict(sim_results_func_1)
-        df_sim2 = pd.DataFrame.from_dict(sim_results_func_2)
-        df_sim3 = pd.DataFrame.from_dict(sim_results_func_3)
+    print("Simulation Completed")
 
-        df_sim1.to_csv(path_or_buf=f"../exports/sim_0{i}_func_1.csv", index=None)
-        df_sim2.to_csv(path_or_buf=f"../exports/sim_0{i}_func_2.csv", index=None)
-        df_sim3.to_csv(path_or_buf=f"../exports/sim_0{i}_func_3.csv", index=None)
+    return df_results
+
+def visualize_simulation_results(df):
+    """
+    Generate three separate graphs for visualizing the simulation results
+    corresponding to LOG2N, N, and NPOW3 functions.
+    """
+    plt.figure(figsize=(12, 12))
+
+    # LOG2N Visualization
+    plt.subplot(3, 1, 1)
+    plt.plot(df["n"], df["LOG2N"], label="LOG2N", color="blue", linestyle='-', linewidth='1')
+    plt.xlabel("Candidate Count")
+    plt.ylabel("Average Hiring Count")
+    plt.title("Hiring Simulation for LOG2N")
+    plt.legend()
+    plt.grid(True)
+
+    # N Visualization
+    plt.subplot(3, 1, 2)
+    plt.plot(df["n"], df["N"], label="N", color="green", linestyle='-', linewidth='1')
+    plt.xlabel("Candidate Count")
+    plt.ylabel("Average Hiring Count")
+    plt.title("Hiring Simulation for N")
+    plt.legend()
+    plt.grid(True)
+
+    # NPOW3 Visualization
+    plt.subplot(3, 1, 3)
+    plt.plot(df["n"], df["NPOW3"], label="NPOW3", color="red", linestyle='-', linewidth='1')
+    plt.xlabel("Candidate Count")
+    plt.ylabel("Average Hiring Count")
+    plt.title("Hiring Simulation for NPOW3")
+    plt.legend()
+    plt.grid(True)
+
+    # plt.tight_layout()
+    plt.subplots_adjust(hspace=1)
+    plt.show()
 
 
-    df1 = pd.DataFrame.from_dict(data_1)
 
-    df1.to_csv(path_or_buf='../exports/hiring_count.csv', index=None)
-
-
-if __name__=="__main__":
-    simulate()
+# Run the simulation
+df_simulation_results = simulate()
+# Generate the visualizations
+visualize_simulation_results(df_simulation_results)
